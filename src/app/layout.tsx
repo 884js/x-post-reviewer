@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
 import { DraftProvider } from '@/contexts/DraftContext';
 
+export const runtime = "edge";
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
