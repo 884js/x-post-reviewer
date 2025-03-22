@@ -1,5 +1,6 @@
 import { DraftList } from '@/components/Draft/DraftList';
 import { ReviewForm } from '@/components/Review/ReviewForm';
+export const runtime = "edge";
 
 export default function Home() {
   return (
