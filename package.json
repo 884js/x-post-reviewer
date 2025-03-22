@@ -1,7 +1,7 @@
 {
-  "name": "twitter-follower-analyzer",
+  "name": "x-post-reviewer",
   "version": "1.0.0",
-  "description": "Twitter follower analyzer to find inactive users",
+  "description": "X post reviewer",
   "main": "dist/index.js",
   "scripts": {
     "dev": "next dev -p 3001",
