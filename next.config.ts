@@ -18,6 +18,21 @@ const nextConfig: NextConfig = {
       allowedOrigins: ['*'],
     },
   },
+  // Google Gemini APIの接続を許可するための設定
+  async headers() {
+    return [
+      {
+        // API経由でGoogleへのリクエストを許可
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ];
+  },
 }
 
 export default nextConfig;
