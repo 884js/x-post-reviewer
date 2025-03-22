@@ -1,9 +1,15 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getRequestContext } from '@cloudflare/next-on-pages';
+
+export const runtime = 'edge';
 
 export async function GET() {
+  const { env } = getRequestContext();
+
+  console.log(env);
   try {
     // APIキーの取得
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = env.GEMINI_API_KEY;
     
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'APIキーが設定されていません' }), {
