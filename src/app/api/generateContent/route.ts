@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, Schema, SchemaType, TextPart } from '@google/generative-ai';
 import { POST_NUANCE } from '@/constants/postNuance';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   const { prompt } = await request.json()
