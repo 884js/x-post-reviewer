@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, Schema, SchemaType, TextPart } from '@google/generative-ai';
-
+import { POST_NUANCE } from '@/constants/postNuance';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
 
 export async function POST(request: Request) {
   const { prompt } = await request.json()
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
         tweet_nuance: {
           type: SchemaType.STRING,
           format: "enum",
-          enum: ["独り言", "問いかけ", "意見表明", "情報共有"],
+          enum: [POST_NUANCE.TALK_TO_ONESELF, POST_NUANCE.QUESTION, POST_NUANCE.OPINION, POST_NUANCE.INFORMATION],
         }
       },
       required: ["should_post", "reason", "usefulness_score", "improvement_suggestions", "tweet_nuance"]
@@ -89,16 +90,16 @@ export async function POST(request: Request) {
           text: "tweet_nuance: 投稿のニュアンスを次の4種類から判定"
         },
         {
-          text: "独り言（個人的につぶやいているニュアンス）"
+          text: `${POST_NUANCE.TALK_TO_ONESELF}（個人的につぶやいているニュアンス）`
         },
         {
-          text: "問いかけ（読者に質問や意見を求めるニュアンス）"
+          text: `${POST_NUANCE.QUESTION}（読者に質問や意見を求めるニュアンス）`
         },
         {
-          text: "意見表明（個人的な意見や考えを述べているニュアンス）"
+          text: `${POST_NUANCE.OPINION}（個人的な意見や考えを述べているニュアンス）`
         },
         {
-          text: "情報共有（情報やニュースを伝えるニュアンス）"
+          text: `${POST_NUANCE.INFORMATION}（情報やニュースを伝えるニュアンス）`
         },
         {
           text: "10. 元のニュアンス（感情表現、複雑な気持ち、迷いや悩みなど）は絶対に崩さず、同じ雰囲気を保ってください。"
@@ -129,10 +130,10 @@ export async function POST(request: Request) {
         },
         {
           text: `"tweet_nuance": 投稿のニュアンスを次の4種類から判定
-            - "独り言"（個人的につぶやいているニュアンス）
-            - "問いかけ"（読者に質問や意見を求めるニュアンス）
-            - "意見表明"（個人的な意見や考えを述べているニュアンス）
-            - "情報共有"（情報やニュースを伝えるニュアンス）
+            - ${POST_NUANCE.TALK_TO_ONESELF}（個人的につぶやいているニュアンス）
+            - ${POST_NUANCE.QUESTION}（読者に質問や意見を求めるニュアンス）
+            - ${POST_NUANCE.OPINION}（個人的な意見や考えを述べているニュアンス）
+            - ${POST_NUANCE.INFORMATION}（情報やニュースを伝えるニュアンス）
           `,
         }
       ],

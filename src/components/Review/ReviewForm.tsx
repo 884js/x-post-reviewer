@@ -3,6 +3,14 @@
 import { useState } from 'react';
 import { useDrafts } from '@/contexts/DraftContext';
 import { Button } from '../Common/Button';
+import { POST_NUANCE } from "@/constants/postNuance";
+
+const POST_NUANCE_LABEL = {
+  [POST_NUANCE.TALK_TO_ONESELF]: "独り言",
+  [POST_NUANCE.QUESTION]: "問いかけ",
+  [POST_NUANCE.OPINION]: "意見表明",
+  [POST_NUANCE.INFORMATION]: "情報共有",
+} as const;
 
 export function ReviewForm() {
   const [content, setContent] = useState('');
@@ -11,7 +19,7 @@ export function ReviewForm() {
     reason: string;
     usefulness_score: number;
     improvement_suggestions: string[];
-    tweet_nuance: string;
+    tweet_nuance: typeof POST_NUANCE[keyof typeof POST_NUANCE];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addDraft } = useDrafts();
@@ -38,7 +46,7 @@ export function ReviewForm() {
       const decoder = new TextDecoder();
       let result = '';
       while (true) {
-        const { done, value } = await reader?.read();
+        const { done, value } = await reader.read();
         if (done) break;
         result += decoder.decode(value);
       }
@@ -72,7 +80,7 @@ export function ReviewForm() {
               className={`w-4 h-4 rounded-full mr-2 ${
                 apiResult.should_post ? "bg-green-500" : "bg-red-500"
               }`}
-            ></div>
+            />
             <h3 className="font-bold text-[#14171a]">
               投稿すべきかどうか:
               <span
@@ -87,7 +95,7 @@ export function ReviewForm() {
 
           <div className="mb-3">
             <h3 className="font-bold text-[#14171a] mb-1">投稿価値:</h3>
-            <div className="flex items-center">
+            <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
@@ -110,7 +118,7 @@ export function ReviewForm() {
             <h3 className="font-bold text-[#14171a] mb-1">ニュアンス:</h3>
             {apiResult.tweet_nuance && (
               <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
-                {apiResult.tweet_nuance}
+                {POST_NUANCE_LABEL[apiResult.tweet_nuance]}
               </p>
             )}
           </div>
