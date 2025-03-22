@@ -1,7 +1,6 @@
-import type { NextConfig } from "next";
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   output: 'standalone',
   images: {
     unoptimized: true,
