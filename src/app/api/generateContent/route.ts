@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI, Schema, SchemaType, TextPart } from '@google/generative-ai';
 import { POST_NUANCE } from '@/constants/postNuance';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+  const { env } = getRequestContext();
+
+  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || '');
   const { prompt } = await request.json()
 
   const generationConfig = {
