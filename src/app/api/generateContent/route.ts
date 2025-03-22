@@ -11,6 +11,9 @@ export async function POST(request: Request) {
     responseSchema: {
       type: SchemaType.OBJECT,
       properties: {
+        original_text: {
+          type: SchemaType.STRING,
+        },
         should_post: {
           type: SchemaType.BOOLEAN,
         },
@@ -118,6 +121,9 @@ export async function POST(request: Request) {
             - 投稿が読者に明確な価値（学び、発見、有益な情報、ユニークさ、共感性）を与える場合のみtrue
             - 内容が曖昧、個人的すぎる、意味が薄い、一般的すぎるものはすべてfalse
           `,
+        },
+        {
+          text: '"original_text": 元の投稿テキスト',
         },
         {
           text: '"reason": 判断の理由を簡潔に日本語で説明（〜100文字）',

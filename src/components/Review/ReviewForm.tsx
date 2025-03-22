@@ -1,9 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useDrafts } from '@/contexts/DraftContext';
 import { Button } from '../Common/Button';
 import { POST_NUANCE } from "@/constants/postNuance";
+import { FiEdit2, FiSend, FiSave, FiPenTool, FiCheck, FiX } from 'react-icons/fi';
+
+// インラインエディタコンポーネント
+function InlineEditor({ 
+  initialText, 
+  onSave, 
+  onCancel 
+}: { 
+  initialText: string;
+  onSave: (text: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState(initialText);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+  
+  return (
+    <div className="w-full">
+      <textarea
+        ref={textareaRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="w-full border border-blue-400 rounded-md p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
+        rows={3}
+      />
+      <div className="flex justify-end mt-2 gap-2">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          size="xs"
+          icon={<FiX />}
+        >
+          キャンセル
+        </Button>
+        <Button
+          variant="primary"
+          onClick={() => onSave(text)}
+          size="xs"
+          icon={<FiCheck />}
+        >
+          保存
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 const POST_NUANCE_LABEL = {
   [POST_NUANCE.TALK_TO_ONESELF]: "独り言",
@@ -15,6 +66,7 @@ const POST_NUANCE_LABEL = {
 export function ReviewForm() {
   const [content, setContent] = useState('');
   const [apiResult, setApiResult] = useState<{
+    original_text: string;
     should_post: boolean;
     reason: string;
     usefulness_score: number;
@@ -22,7 +74,26 @@ export function ReviewForm() {
     tweet_nuance: typeof POST_NUANCE[keyof typeof POST_NUANCE];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingSuggestionIndex, setEditingSuggestionIndex] = useState<number | null>(null);
+  const [editedSuggestion, setEditedSuggestion] = useState('');
+  const [isEditingOriginal, setIsEditingOriginal] = useState(false);
+  const [editedOriginal, setEditedOriginal] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
   const { addDraft } = useDrafts();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const originalTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 編集モードが有効になったら3秒後に自動的に解除
+  useEffect(() => {
+    if (isEditMode) {
+      const timer = setTimeout(() => {
+        setIsEditMode(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditMode]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -50,6 +121,7 @@ export function ReviewForm() {
         if (done) break;
         result += decoder.decode(value);
       }
+      setContent("");
       setApiResult(JSON.parse(result));
     } catch (error) {
       console.error('エラーが発生しました。', error);
@@ -59,6 +131,31 @@ export function ReviewForm() {
     }
   };
 
+  const startEditingSuggestion = (suggestion: string, index: number) => {
+    setEditingSuggestionIndex(index);
+    setEditedSuggestion(suggestion);
+    
+    setTimeout(() => {
+      if (editingTextareaRef.current) {
+        editingTextareaRef.current.focus();
+      }
+    }, 100);
+  };
+
+  const saveSuggestionEdit = useCallback((text: string) => {
+    if (apiResult && editingSuggestionIndex !== null) {
+      const updatedSuggestions = [...apiResult.improvement_suggestions];
+      updatedSuggestions[editingSuggestionIndex] = text;
+      
+      setApiResult({
+        ...apiResult,
+        improvement_suggestions: updatedSuggestions
+      });
+      
+      setEditingSuggestionIndex(null);
+    }
+  }, [apiResult, editingSuggestionIndex]);
+
   const handleSaveDraft = () => {
     if (!content.trim()) {
       alert('下書きを保存する内容を入力してください。');
@@ -67,6 +164,65 @@ export function ReviewForm() {
     addDraft(content);
     setContent('');
     alert('下書きを保存しました。');
+  };
+
+  const startEditingOriginal = () => {
+    if (apiResult) {
+      setIsEditingOriginal(true);
+      setEditedOriginal(apiResult.original_text);
+      
+      setTimeout(() => {
+        if (originalTextareaRef.current) {
+          originalTextareaRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
+  const cancelEditingOriginal = () => {
+    setIsEditingOriginal(false);
+    setEditedOriginal('');
+  };
+
+  const saveOriginalEdit = useCallback((text: string) => {
+    if (apiResult) {
+      setApiResult({
+        ...apiResult,
+        original_text: text
+      });
+      
+      setIsEditingOriginal(false);
+    }
+  }, [apiResult]);
+
+  const handlePost = async (text: string) => {
+    setIsPosting(true);
+    
+    try {
+      console.log('投稿する:', text);
+      
+      alert('投稿しました！');
+      
+      setApiResult(null);
+      setContent('');
+    } catch (error) {
+      console.error('投稿エラー:', error);
+      alert('投稿に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleEdit = (suggestion: string) => {
+    setContent(suggestion);
+    setIsEditMode(true);
+    
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   const Result = () => {
@@ -132,19 +288,85 @@ export function ReviewForm() {
             )}
           </div>
 
+          <div className="mb-3">
+            <h3 className="font-bold text-[#14171a] mb-1">元の文章:</h3>
+            {isEditingOriginal ? (
+              <InlineEditor
+                initialText={apiResult.original_text}
+                onSave={saveOriginalEdit}
+                onCancel={() => setIsEditingOriginal(false)}
+              />
+            ) : (
+              <>
+                <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
+                  {apiResult.original_text}
+                </p>
+                <div className="flex justify-end mt-2 md:mt-3 gap-2">
+                  <Button 
+                    variant="secondary" 
+                    onClick={startEditingOriginal} 
+                    size="xs" 
+                    icon={<FiEdit2 />}
+                  >
+                    編集
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => handlePost(apiResult.original_text)} 
+                    size="xs"
+                    icon={<FiSend />}
+                    isLoading={isPosting}
+                  >
+                    ポストする
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+
           <div>
             <h3 className="font-bold text-[#14171a] mb-2">改善案:</h3>
             <ul className="space-y-2">
               {apiResult.improvement_suggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  className="bg-[#e0f7fa] p-3 rounded-lg flex items-start"
-                >
-                  <span className="text-[#1da1f2] font-bold mr-2">
-                    {index + 1}.
-                  </span>
-                  <span>{suggestion}</span>
-                </li>
+                <div key={index}>
+                  <li
+                    className="bg-[#e0f7fa] p-3 rounded-lg flex items-start"
+                  >
+                    <span className="text-[#1da1f2] font-bold mr-2">
+                      {index + 1}.
+                    </span>
+                    {editingSuggestionIndex === index ? (
+                      <InlineEditor
+                        initialText={suggestion}
+                        onSave={(text) => saveSuggestionEdit(text)}
+                        onCancel={() => setEditingSuggestionIndex(null)}
+                      />
+                    ) : (
+                      <span>{suggestion}</span>
+                    )}
+                  </li>
+                  {editingSuggestionIndex !== index && (
+                    <div className="flex justify-end mt-2 md:mt-3 gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => startEditingSuggestion(suggestion, index)}
+                        size="xs"
+                        icon={<FiEdit2 />}
+                      >
+                        編集
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={() => handlePost(suggestion)}
+                        size="xs"
+                        icon={<FiSend />}
+                        isLoading={isPosting}
+                      >
+                        ポストする
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ))}
             </ul>
           </div>
@@ -156,18 +378,39 @@ export function ReviewForm() {
   return (
     <>
       <Result />
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-8 transition-all duration-300 hover:shadow-lg hover:scale-[1.01]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-8">
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="transparent"
+            onClick={handleSaveDraft}
+            size="xs"
+            icon={<FiSave />}
+          >
+            下書き保存
+          </Button>
+        </div>
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="投稿内容を入力..."
-          className="w-full h-32 md:h-48 border border-gray-300 dark:border-gray-700 rounded-md p-2 md:p-3 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-gray-50 dark:bg-gray-700 transition-all duration-300 focus:ring-opacity-50"
+          className={`w-full h-32 md:h-48 border ${
+            isEditMode
+              ? "border-blue-500 ring-2 ring-blue-300"
+              : "border-gray-300 dark:border-gray-700"
+          } rounded-md p-2 md:p-3 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-gray-50 dark:bg-gray-700 transition-all duration-300 focus:ring-opacity-50`}
         />
-        <div className="flex justify-end mt-2 md:mt-3">
-          <Button variant="primary" onClick={handleSubmit} isLoading={isLoading}>
+        <div className="flex justify-end mt-2 md:mt-3 gap-2">
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            isLoading={isLoading}
+            size="sm"
+            icon={<FiPenTool />}
+          >
             添削する
-            </Button>
-          </div>
+          </Button>
+        </div>
       </div>
     </>
   );
