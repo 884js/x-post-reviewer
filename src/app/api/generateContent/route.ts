@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, Schema, SchemaType, TextPart } from '@google/generative-ai';
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { POST_NUANCE } from '@/constants/postNuance';
 
 export const runtime = 'edge';
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash', generationConfig })
 
-  const result = await model.generateContentStream({
+  const result = await model.generateContent({
     contents: [
       {
         role: 'user',
@@ -147,20 +147,9 @@ export async function POST(request: Request) {
     },
   })
 
-  return new Response(new ReadableStream({
-    async pull(controller) {
-      const { done, value } = await result.stream.next()
-      if (done) {
-        controller.close()
-      } else {
-        controller.enqueue(value.text())
-      }
+  return new Response(JSON.stringify(result.response.text()), {
+    headers: {
+      'Content-Type': 'application/json',
     },
-  }))
-
-  // return new Response(JSON.stringify(result.response.text()), {
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  // })
+  })
 }

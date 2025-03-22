@@ -111,16 +111,7 @@ export function ReviewForm() {
         body: JSON.stringify({ prompt: content }),
       });
 
-      const reader = res.body?.getReader();
-
-      if (!reader) return;
-      const decoder = new TextDecoder();
-      let result = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        result += decoder.decode(value);
-      }
+      const result = await res.json();
       setContent("");
       setApiResult(JSON.parse(result));
     } catch (error) {
