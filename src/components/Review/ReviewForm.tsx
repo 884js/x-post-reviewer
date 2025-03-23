@@ -3,95 +3,19 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useDrafts } from '@/contexts/DraftContext';
 import { Button } from '../Common/Button';
-import { POST_NUANCE } from "@/constants/postNuance";
-import { FiEdit2, FiSend, FiSave, FiPenTool, FiCheck, FiX } from 'react-icons/fi';
+import { FiSave, FiPenTool } from 'react-icons/fi';
+import { ReviewResult } from '@/types';
+import { Result } from './Result';
 
-// インラインエディタコンポーネント
-function InlineEditor({ 
-  initialText, 
-  onSave, 
-  onCancel 
-}: { 
-  initialText: string;
-  onSave: (text: string) => void;
-  onCancel: () => void;
-}) {
-  const [text, setText] = useState(initialText);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
-  
-  return (
-    <div className="w-full">
-      <textarea
-        ref={textareaRef}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="w-full border border-blue-400 rounded-md p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
-        rows={3}
-      />
-      <div className="flex justify-end mt-2 gap-2">
-        <Button
-          variant="secondary"
-          onClick={onCancel}
-          size="xs"
-          icon={<FiX />}
-        >
-          キャンセル
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => onSave(text)}
-          size="xs"
-          icon={<FiCheck />}
-        >
-          保存
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-const PostButton = ({ text }: { text: string }) => {
-  return (
-    <a href={`https://twitter.com/intent/tweet?text=${text}`} target="_blank" rel="noopener noreferrer">
-      <Button variant="primary" size="xs" icon={<FiSend />}>ポストする</Button>
-    </a>
-  );
-}
-
-const POST_NUANCE_LABEL = {
-  [POST_NUANCE.TALK_TO_ONESELF]: "独り言",
-  [POST_NUANCE.QUESTION]: "問いかけ",
-  [POST_NUANCE.OPINION]: "意見表明",
-  [POST_NUANCE.INFORMATION]: "情報共有",
-} as const;
 
 export function ReviewForm() {
   const [content, setContent] = useState('');
-  const [apiResult, setApiResult] = useState<{
-    original_text: string;
-    should_post: boolean;
-    reason: string;
-    usefulness_score: number;
-    improvement_suggestions: string[];
-    tweet_nuance: typeof POST_NUANCE[keyof typeof POST_NUANCE];
-  } | null>(null);
+  const [apiResult, setApiResult] = useState<ReviewResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingSuggestionIndex, setEditingSuggestionIndex] = useState<number | null>(null);
-  const [editedSuggestion, setEditedSuggestion] = useState('');
-  const [isEditingOriginal, setIsEditingOriginal] = useState(false);
-  const [editedOriginal, setEditedOriginal] = useState('');
-  const [isPosting, setIsPosting] = useState(false);
   const { addDraft } = useDrafts();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const originalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mode, setMode] = useState<'input' | 'review'>('input');
 
   useEffect(() => {
     if (isEditMode) {
@@ -121,6 +45,7 @@ export function ReviewForm() {
       const result = await res.json();
       setContent("");
       setApiResult(JSON.parse(result));
+      setMode('review');
     } catch (error) {
       console.error('エラーが発生しました。', error);
       alert('エラーが発生しました。もう一度お試しください。');
@@ -128,29 +53,6 @@ export function ReviewForm() {
       setIsLoading(false);
     }
   };
-
-  const startEditingSuggestion = (suggestion: string, index: number) => {
-    setEditingSuggestionIndex(index);
-    setEditedSuggestion(suggestion);
-    setTimeout(() => {
-      if (editingTextareaRef.current) {
-        editingTextareaRef.current.focus();
-      }
-    }, 100);
-  };
-
-  const saveSuggestionEdit = useCallback((text: string) => {
-    if (apiResult && editingSuggestionIndex !== null) {
-      const updatedSuggestions = [...apiResult.improvement_suggestions];
-      updatedSuggestions[editingSuggestionIndex] = text;
-      setApiResult({
-        ...apiResult,
-        improvement_suggestions: updatedSuggestions
-      });
-      
-      setEditingSuggestionIndex(null);
-    }
-  }, [apiResult, editingSuggestionIndex]);
 
   const handleSaveDraft = () => {
     if (!content.trim()) {
@@ -162,175 +64,23 @@ export function ReviewForm() {
     alert('下書きを保存しました。');
   };
 
-  const startEditingOriginal = () => {
-    if (apiResult) {
-      setIsEditingOriginal(true);
-      setEditedOriginal(apiResult.original_text);
-      
-      setTimeout(() => {
-        if (originalTextareaRef.current) {
-          originalTextareaRef.current.focus();
-        }
-      }, 100);
-    }
-  };
-
-  const saveOriginalEdit = useCallback((text: string) => {
-    if (apiResult) {
-      setApiResult({
-        ...apiResult,
-        original_text: text
-      });
-      
-      setIsEditingOriginal(false);
-    }
-  }, [apiResult]);
-
-  const Result = () => {
-    if (!apiResult) return null;
-
-    return (
-      <div className="mb-6 p-4 bg-white rounded-lg border border-[#e1e8ed] shadow-sm">
-        <div className="mb-4">
-          <div className="flex items-center mb-3">
-            <div
-              className={`w-4 h-4 rounded-full mr-2 ${
-                apiResult.should_post ? "bg-green-500" : "bg-red-500"
-              }`}
-            />
-            <h3 className="font-bold text-[#14171a]">
-              投稿すべきかどうか:
-              <span
-                className={`ml-2 ${
-                  apiResult.should_post ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {apiResult.should_post ? "はい" : "いいえ"}
-              </span>
-            </h3>
-          </div>
-
-          <div className="mb-3">
-            <h3 className="font-bold text-[#14171a] mb-1">投稿価値:</h3>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  className={`text-2xl ${
-                    star <= apiResult.usefulness_score
-                      ? "text-[#ffd700]"
-                      : "text-gray-300"
-                  }`}
-                >
-                  ★
-                </span>
-              ))}
-              <span className="ml-2 text-[#1da1f2] font-semibold">
-                {apiResult.usefulness_score}/5
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <h3 className="font-bold text-[#14171a] mb-1">ニュアンス:</h3>
-            {apiResult.tweet_nuance && (
-              <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
-                {POST_NUANCE_LABEL[apiResult.tweet_nuance]}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-3">
-            <h3 className="font-bold text-[#14171a] mb-1">理由:</h3>
-            {apiResult.reason && (
-              <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
-                {apiResult.reason}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-3">
-            <h3 className="font-bold text-[#14171a] mb-1">元の文章:</h3>
-            {isEditingOriginal ? (
-              <InlineEditor
-                initialText={apiResult.original_text}
-                onSave={saveOriginalEdit}
-                onCancel={() => setIsEditingOriginal(false)}
-              />
-            ) : (
-              <>
-                <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
-                  {apiResult.original_text}
-                </p>
-                <div className="flex justify-end mt-2 md:mt-3 gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={startEditingOriginal}
-                    size="xs"
-                    icon={<FiEdit2 />}
-                  >
-                    編集
-                  </Button>
-                  <PostButton text={apiResult.original_text} />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div>
-            <h3 className="font-bold text-[#14171a]">改善案:</h3>
-            <ul className="space-y-2 flex flex-col gap-2">
-              {apiResult.improvement_suggestions.map((suggestion, index) => (
-                <div key={index}>
-                  <li className="bg-[#e0f7fa] p-3 rounded-lg flex items-start">
-                    <span className="text-[#1da1f2] font-bold mr-2">
-                      {index + 1}.
-                    </span>
-                    {editingSuggestionIndex === index ? (
-                      <InlineEditor
-                        initialText={suggestion}
-                        onSave={(text) => saveSuggestionEdit(text)}
-                        onCancel={() => setEditingSuggestionIndex(null)}
-                      />
-                    ) : (
-                      <span>{suggestion}</span>
-                    )}
-                  </li>
-                  {editingSuggestionIndex !== index && (
-                    <div className="flex justify-end mt-2 md:mt-3 gap-2">
-                      <Button
-                        variant="secondary"
-                        className="w-auto"
-                        onClick={() =>
-                          startEditingSuggestion(suggestion, index)
-                        }
-                        size="xs"
-                        icon={<FiEdit2 />}
-                      >
-                        編集
-                      </Button>
-                      <PostButton text={suggestion} />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <Result />
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-8">
-        <div className="flex justify-end mb-2">
-          <Button
-            variant="transparent"
-            className="!w-auto"
-            onClick={handleSaveDraft}
-            size="xs"
+      {mode === 'review' && (
+        <Result
+          reviewResult={apiResult}
+          onUpdateReviewResult={setApiResult}
+          onBack={() => setMode('input')}
+        />
+      )}
+      {mode === 'input' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-8">
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="transparent"
+              className="!w-auto"
+              onClick={handleSaveDraft}
+              size="xs"
             icon={<FiSave />}
           >
             下書き
@@ -340,7 +90,7 @@ export function ReviewForm() {
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="投稿内容を入力..."
+          placeholder="添削したい投稿内容を入力..."
           className={`w-full h-32 md:h-48 border ${
             isEditMode
               ? "border-blue-500 ring-2 ring-blue-300"
@@ -356,9 +106,10 @@ export function ReviewForm() {
             icon={<FiPenTool />}
           >
             添削する
-          </Button>
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
