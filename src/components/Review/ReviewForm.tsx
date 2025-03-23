@@ -85,7 +85,6 @@ export function ReviewForm() {
   const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
   const originalTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 編集モードが有効になったら3秒後に自動的に解除
   useEffect(() => {
     if (isEditMode) {
       const timer = setTimeout(() => {
@@ -125,7 +124,6 @@ export function ReviewForm() {
   const startEditingSuggestion = (suggestion: string, index: number) => {
     setEditingSuggestionIndex(index);
     setEditedSuggestion(suggestion);
-    
     setTimeout(() => {
       if (editingTextareaRef.current) {
         editingTextareaRef.current.focus();
@@ -137,7 +135,6 @@ export function ReviewForm() {
     if (apiResult && editingSuggestionIndex !== null) {
       const updatedSuggestions = [...apiResult.improvement_suggestions];
       updatedSuggestions[editingSuggestionIndex] = text;
-      
       setApiResult({
         ...apiResult,
         improvement_suggestions: updatedSuggestions
@@ -170,11 +167,6 @@ export function ReviewForm() {
     }
   };
 
-  const cancelEditingOriginal = () => {
-    setIsEditingOriginal(false);
-    setEditedOriginal('');
-  };
-
   const saveOriginalEdit = useCallback((text: string) => {
     if (apiResult) {
       setApiResult({
@@ -185,36 +177,6 @@ export function ReviewForm() {
       setIsEditingOriginal(false);
     }
   }, [apiResult]);
-
-  const handlePost = async (text: string) => {
-    setIsPosting(true);
-    
-    try {
-      console.log('投稿する:', text);
-      
-      alert('投稿しました！');
-      
-      setApiResult(null);
-      setContent('');
-    } catch (error) {
-      console.error('投稿エラー:', error);
-      alert('投稿に失敗しました。もう一度お試しください。');
-    } finally {
-      setIsPosting(false);
-    }
-  };
-
-  const handleEdit = (suggestion: string) => {
-    setContent(suggestion);
-    setIsEditMode(true);
-    
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100);
-  };
 
   const Result = () => {
     if (!apiResult) return null;
@@ -293,23 +255,28 @@ export function ReviewForm() {
                   {apiResult.original_text}
                 </p>
                 <div className="flex justify-end mt-2 md:mt-3 gap-2">
-                  <Button 
-                    variant="secondary" 
-                    onClick={startEditingOriginal} 
-                    size="xs" 
+                  <Button
+                    variant="secondary"
+                    onClick={startEditingOriginal}
+                    size="xs"
                     icon={<FiEdit2 />}
                   >
                     編集
                   </Button>
-                  <Button 
-                    variant="primary" 
-                    onClick={() => handlePost(apiResult.original_text)} 
-                    size="xs"
-                    icon={<FiSend />}
-                    isLoading={isPosting}
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${apiResult.original_text}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    ポストする
-                  </Button>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      icon={<FiSend />}
+                      isLoading={isPosting}
+                    >
+                      ポストする
+                    </Button>
+                  </a>
                 </div>
               </>
             )}
@@ -320,9 +287,7 @@ export function ReviewForm() {
             <ul className="space-y-2">
               {apiResult.improvement_suggestions.map((suggestion, index) => (
                 <div key={index}>
-                  <li
-                    className="bg-[#e0f7fa] p-3 rounded-lg flex items-start"
-                  >
+                  <li className="bg-[#e0f7fa] p-3 rounded-lg flex items-start">
                     <span className="text-[#1da1f2] font-bold mr-2">
                       {index + 1}.
                     </span>
@@ -340,21 +305,28 @@ export function ReviewForm() {
                     <div className="flex justify-end mt-2 md:mt-3 gap-2">
                       <Button
                         variant="secondary"
-                        onClick={() => startEditingSuggestion(suggestion, index)}
+                        onClick={() =>
+                          startEditingSuggestion(suggestion, index)
+                        }
                         size="xs"
                         icon={<FiEdit2 />}
                       >
                         編集
                       </Button>
-                      <Button
-                        variant="primary"
-                        onClick={() => handlePost(suggestion)}
-                        size="xs"
-                        icon={<FiSend />}
-                        isLoading={isPosting}
+                      <a
+                        href={`https://twitter.com/intent/tweet?text=${suggestion}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        ポストする
-                      </Button>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          icon={<FiSend />}
+                          isLoading={isPosting}
+                        >
+                          ポストする
+                        </Button>
+                      </a>
                     </div>
                   )}
                 </div>
