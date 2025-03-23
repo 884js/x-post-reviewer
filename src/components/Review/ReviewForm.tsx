@@ -56,6 +56,14 @@ function InlineEditor({
   );
 }
 
+const PostButton = ({ text }: { text: string }) => {
+  return (
+    <a href={`https://twitter.com/intent/tweet?text=${text}`} target="_blank" rel="noopener noreferrer">
+      <Button variant="primary" size="xs" icon={<FiSend />}>ポストする</Button>
+    </a>
+  );
+}
+
 const POST_NUANCE_LABEL = {
   [POST_NUANCE.TALK_TO_ONESELF]: "独り言",
   [POST_NUANCE.QUESTION]: "問いかけ",
@@ -263,28 +271,15 @@ export function ReviewForm() {
                   >
                     編集
                   </Button>
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${apiResult.original_text}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="primary"
-                      size="xs"
-                      icon={<FiSend />}
-                      isLoading={isPosting}
-                    >
-                      ポストする
-                    </Button>
-                  </a>
+                  <PostButton text={apiResult.original_text} />
                 </div>
               </>
             )}
           </div>
 
           <div>
-            <h3 className="font-bold text-[#14171a] mb-2">改善案:</h3>
-            <ul className="space-y-2">
+            <h3 className="font-bold text-[#14171a]">改善案:</h3>
+            <ul className="space-y-2 flex flex-col gap-2">
               {apiResult.improvement_suggestions.map((suggestion, index) => (
                 <div key={index}>
                   <li className="bg-[#e0f7fa] p-3 rounded-lg flex items-start">
@@ -305,6 +300,7 @@ export function ReviewForm() {
                     <div className="flex justify-end mt-2 md:mt-3 gap-2">
                       <Button
                         variant="secondary"
+                        className="w-auto"
                         onClick={() =>
                           startEditingSuggestion(suggestion, index)
                         }
@@ -313,20 +309,7 @@ export function ReviewForm() {
                       >
                         編集
                       </Button>
-                      <a
-                        href={`https://twitter.com/intent/tweet?text=${suggestion}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button
-                          variant="primary"
-                          size="xs"
-                          icon={<FiSend />}
-                          isLoading={isPosting}
-                        >
-                          ポストする
-                        </Button>
-                      </a>
+                      <PostButton text={suggestion} />
                     </div>
                   )}
                 </div>
@@ -345,11 +328,12 @@ export function ReviewForm() {
         <div className="flex justify-end mb-2">
           <Button
             variant="transparent"
+            className="!w-auto"
             onClick={handleSaveDraft}
             size="xs"
             icon={<FiSave />}
           >
-            下書き保存
+            下書き
           </Button>
         </div>
         <textarea
