@@ -1,9 +1,9 @@
-import { POST_TYPE, POST_RECOMMENDATION } from "@/constants/postNuance";
-import { ReviewResult } from "@/types";
+import { ReviewResult, ImprovementSuggestion } from "@/types";
 import { Button } from "../Common/Button";
 import { FiCheck, FiEdit2, FiSend, FiX } from "react-icons/fi";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BsChevronLeft } from "react-icons/bs";
+import { formatTweetCount } from "@/utils/tweetCounter";
 
 type Props = {
   reviewResult: ReviewResult | null;
@@ -11,43 +11,43 @@ type Props = {
   onBack: () => void;
 };
 
-const POST_TYPE_LABEL = {
-  [POST_TYPE.TALK_TO_ONESELF]: "独り言",
-  [POST_TYPE.QUESTION]: "問いかけ",
-  [POST_TYPE.OPINION]: "意見表明",
-  [POST_TYPE.INFORMATION]: "情報共有",
-} as const;
+const POST_TYPE_LABEL: Record<string, string> = {
+  "talking_to_oneself": "独り言",
+  "question": "問いかけ",
+  "opinion": "意見表明",
+  "information": "情報共有",
+};
 
-const POST_TYPE_DESCRIPTION = {
-  [POST_TYPE.TALK_TO_ONESELF]: "自分自身に向けた考えや感情の表現",
-  [POST_TYPE.QUESTION]: "読者や他者に質問や意見を求める表現",
-  [POST_TYPE.OPINION]: "自分の考えや立場を表明する表現",
-  [POST_TYPE.INFORMATION]: "客観的な情報やニュースを伝える表現",
-} as const;
+const POST_TYPE_DESCRIPTION: Record<string, string> = {
+  "talking_to_oneself": "自分自身に向けた考えや感情の表現",
+  "question": "読者や他者に質問や意見を求める表現",
+  "opinion": "自分の考えや立場を表明する表現",
+  "information": "客観的な情報やニュースを伝える表現",
+};
 
-const POST_RECOMMENDATION_LABEL = {
-  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "絶対に投稿すべき",
-  [POST_RECOMMENDATION.RECOMMENDED]: "投稿してもよい",
-  [POST_RECOMMENDATION.NEUTRAL]: "どちらとも言えない",
-  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "投稿は控えたほうがよい",
-  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "投稿すべきでない",
-} as const;
+const POST_RECOMMENDATION_LABEL: Record<string, string> = {
+  "highly_recommended": "絶対に投稿すべき",
+  "recommended": "投稿してもよい",
+  "neutral": "どちらとも言えない",
+  "not_recommended": "投稿は控えたほうがよい",
+  "strongly_discouraged": "投稿すべきでない",
+};
 
-const POST_RECOMMENDATION_COLOR = {
-  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "bg-green-500",
-  [POST_RECOMMENDATION.RECOMMENDED]: "bg-green-400",
-  [POST_RECOMMENDATION.NEUTRAL]: "bg-yellow-400",
-  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "bg-orange-400",
-  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "bg-red-500",
-} as const;
+const POST_RECOMMENDATION_COLOR: Record<string, string> = {
+  "highly_recommended": "bg-green-500",
+  "recommended": "bg-green-400",
+  "neutral": "bg-yellow-400",
+  "not_recommended": "bg-orange-400",
+  "strongly_discouraged": "bg-red-500",
+};
 
-const POST_RECOMMENDATION_TEXT_COLOR = {
-  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "text-green-600",
-  [POST_RECOMMENDATION.RECOMMENDED]: "text-green-500",
-  [POST_RECOMMENDATION.NEUTRAL]: "text-yellow-600",
-  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "text-orange-600",
-  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "text-red-600",
-} as const;
+const POST_RECOMMENDATION_TEXT_COLOR: Record<string, string> = {
+  "highly_recommended": "text-green-600",
+  "recommended": "text-green-500",
+  "neutral": "text-yellow-600",
+  "not_recommended": "text-orange-600",
+  "strongly_discouraged": "text-red-600",
+};
 
 const PostButton = ({ text }: { text: string }) => {
   return (
@@ -64,18 +64,17 @@ const PostButton = ({ text }: { text: string }) => {
 };
 
 export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) => {
-  const [editedSuggestion, setEditedSuggestion] = useState("");
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
-  const [editedOriginal, setEditedOriginal] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
   const [editingSuggestionIndex, setEditingSuggestionIndex] = useState<
     number | null
     >(null);
 
+  // Twitter文字数カウント
+  const originalTextCount = reviewResult ? formatTweetCount(reviewResult.original_text) : { displayCount: 0, isNearLimit: false, isOverLimit: false };
+
   const startEditingOriginal = () => {
     if (reviewResult) {
       setIsEditingOriginal(true);
-      setEditedOriginal(reviewResult.original_text);
     }
   };
 
@@ -93,16 +92,18 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
     [reviewResult, onUpdateReviewResult]
   );
 
-  const startEditingSuggestion = (suggestion: string, index: number) => {
+  const startEditingSuggestion = (suggestion: ImprovementSuggestion, index: number) => {
     setEditingSuggestionIndex(index);
-    setEditedSuggestion(suggestion);
   };
 
   const saveSuggestionEdit = useCallback(
     (text: string) => {
       if (reviewResult && editingSuggestionIndex !== null) {
         const updatedSuggestions = [...reviewResult.improvement_suggestions];
-        updatedSuggestions[editingSuggestionIndex] = text;
+        updatedSuggestions[editingSuggestionIndex] = {
+          text,
+          improvements: updatedSuggestions[editingSuggestionIndex].improvements
+        };
         onUpdateReviewResult({
           ...reviewResult,
           improvement_suggestions: updatedSuggestions,
@@ -196,15 +197,33 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
           {isEditingOriginal ? (
             <InlineEditor
               initialText={reviewResult.original_text}
-              onSave={saveOriginalEdit}
+              onSave={(text) => saveOriginalEdit(text)}
               onCancel={() => setIsEditingOriginal(false)}
+              maxLength={280}
             />
           ) : (
             <>
-              <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
+              <p
+                className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2] break-keep"
+                style={{ overflowWrap: "anywhere" }}
+              >
                 {reviewResult.original_text}
               </p>
-              <div className="flex justify-end mt-2 md:mt-3 gap-2">
+              <div className="flex justify-end mt-2">
+                <div className="text-sm text-gray-500">
+                  <span
+                    className={
+                      originalTextCount.isNearLimit
+                        ? (originalTextCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold")
+                        : ""
+                    }
+                  >
+                    {originalTextCount.displayCount}
+                  </span>
+                  <span> / 280</span>
+                </div>
+              </div>
+              <div className="flex justify-end mt-2 gap-2">
                 <Button
                   variant="secondary"
                   onClick={startEditingOriginal}
@@ -222,38 +241,72 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
         <div>
           <h3 className="font-bold text-[#14171a]">改善案:</h3>
           <ul className="space-y-2 flex flex-col gap-2">
-            {reviewResult.improvement_suggestions.map((suggestion, index) => (
-              <div key={index}>
-                <li className="bg-[#e0f7fa] p-3 rounded-lg flex items-start">
-                  <span className="text-[#1da1f2] font-bold mr-2">
-                    {index + 1}.
-                  </span>
-                  {editingSuggestionIndex === index ? (
-                    <InlineEditor
-                      initialText={suggestion}
-                      onSave={(text) => saveSuggestionEdit(text)}
-                      onCancel={() => setEditingSuggestionIndex(null)}
-                    />
-                  ) : (
-                    <span>{suggestion}</span>
+            {reviewResult.improvement_suggestions.map((suggestion, index) => {
+              // 各改善案の文字数をカウント
+              const suggestionCount = formatTweetCount(suggestion.text);
+              
+              return (
+                <div key={index}>
+                  <li className="bg-[#e0f7fa] p-3 rounded-lg flex flex-col">
+                    <div className="flex items-start">
+                      <span className="text-[#1da1f2] font-bold mr-2">
+                        {index + 1}.
+                      </span>
+                      {editingSuggestionIndex === index ? (
+                        <InlineEditor
+                          initialText={suggestion.text}
+                          onSave={saveSuggestionEdit}
+                          onCancel={() => setEditingSuggestionIndex(null)}
+                          maxLength={280}
+                        />
+                      ) : (
+                        <span style={{ overflowWrap: "anywhere" }} className="break-keep">
+                          {suggestion.text}
+                        </span>
+                      )}
+                    </div>
+                    {suggestion.improvements && (
+                      <div className="mt-2 ml-6 text-sm text-gray-600 italic">
+                        <span className="font-medium">改善点: </span>
+                        {suggestion.improvements}
+                      </div>
+                    )}
+                  </li>
+                  {editingSuggestionIndex !== index && (
+                    <>
+                      <div className="flex justify-end mt-2">
+                        <div className="text-sm text-gray-500">
+                          <span
+                            className={
+                              suggestionCount.isNearLimit
+                                ? (suggestionCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold")
+                                : ""
+                            }
+                          >
+                            {suggestionCount.displayCount}
+                          </span>
+                          <span> / 280</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end mt-2 gap-2">
+                        <Button
+                          variant="secondary"
+                          className="w-auto"
+                          onClick={() =>
+                            startEditingSuggestion(suggestion, index)
+                          }
+                          size="xs"
+                          icon={<FiEdit2 />}
+                        >
+                          編集
+                        </Button>
+                        <PostButton text={suggestion.text} />
+                      </div>
+                    </>
                   )}
-                </li>
-                {editingSuggestionIndex !== index && (
-                  <div className="flex justify-end mt-2 md:mt-3 gap-2">
-                    <Button
-                      variant="secondary"
-                      className="w-auto"
-                      onClick={() => startEditingSuggestion(suggestion, index)}
-                      size="xs"
-                      icon={<FiEdit2 />}
-                    >
-                      編集
-                    </Button>
-                    <PostButton text={suggestion} />
-                  </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -261,51 +314,65 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
   );
 };
 
-  function InlineEditor({
-    initialText,
-    onSave,
-    onCancel,
-  }: {
-    initialText: string;
-    onSave: (text: string) => void;
-    onCancel: () => void;
-  }) {
-    const [text, setText] = useState(initialText);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+function InlineEditor({
+  initialText,
+  onSave,
+  onCancel,
+  maxLength,
+}: {
+  initialText: string;
+  onSave: (text: string) => void;
+  onCancel: () => void;
+  maxLength: number;
+}) {
+  const [text, setText] = useState(initialText);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Twitter文字数カウント
+  const tweetCount = formatTweetCount(text);
 
-    useEffect(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }, []);
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
 
-    return (
-      <div className="w-full">
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="w-full border border-blue-400 rounded-md p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
-          rows={3}
-        />
-        <div className="flex justify-end mt-2 gap-2">
-          <Button
-            variant="secondary"
-            onClick={onCancel}
-            size="xs"
-            icon={<FiX />}
-          >
-            キャンセル
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => onSave(text)}
-            size="xs"
-            icon={<FiCheck />}
-          >
-            保存
-          </Button>
+  return (
+    <div className="w-full">
+      <textarea
+        ref={textareaRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="w-full border border-blue-400 rounded-md p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
+        rows={3}
+      />
+      <div className="flex justify-end mt-2">
+        <div className="text-sm text-gray-500">
+          <span className={tweetCount.isNearLimit ? (tweetCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold") : ""}>
+            {tweetCount.displayCount}
+          </span>
+          <span> / {maxLength}</span>
         </div>
       </div>
-    );
-  }
+      <div className="flex justify-end mt-2 gap-2">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          size="xs"
+          icon={<FiX />}
+        >
+          キャンセル
+        </Button>
+        <Button
+          variant="primary"
+          onClick={() => onSave(text)}
+          size="xs"
+          icon={<FiCheck />}
+          disabled={tweetCount.isOverLimit}
+        >
+          保存
+        </Button>
+      </div>
+    </div>
+  );
+}

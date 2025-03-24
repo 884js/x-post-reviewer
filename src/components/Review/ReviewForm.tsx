@@ -6,7 +6,7 @@ import { Button } from '../Common/Button';
 import { FiSave, FiPenTool } from 'react-icons/fi';
 import { ReviewResult } from '@/types';
 import { Result } from './Result';
-
+import { formatTweetCount } from '@/utils/tweetCounter';
 
 export function ReviewForm() {
   const [content, setContent] = useState('');
@@ -16,6 +16,9 @@ export function ReviewForm() {
   const { addDraft } = useDrafts();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<'input' | 'review'>('input');
+
+  // twitter-textを使って文字数をカウント
+  const tweetCount = formatTweetCount(content);
 
   useEffect(() => {
     if (isEditMode) {
@@ -44,7 +47,10 @@ export function ReviewForm() {
 
       const result = await res.json();
       setContent("");
-      setApiResult(JSON.parse(result));
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setApiResult(result);
       setMode('review');
     } catch (error) {
       console.error('エラーが発生しました。', error);
@@ -81,31 +87,40 @@ export function ReviewForm() {
               className="!w-auto"
               onClick={handleSaveDraft}
               size="xs"
-            icon={<FiSave />}
-          >
-            下書き
-          </Button>
-        </div>
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="添削したい投稿内容を入力..."
-          className={`w-full h-32 md:h-48 border ${
-            isEditMode
-              ? "border-blue-500 ring-2 ring-blue-300"
-              : "border-gray-300 dark:border-gray-700"
-          } rounded-md p-2 md:p-3 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-gray-50 dark:bg-gray-700 transition-all duration-300 focus:ring-opacity-50`}
-        />
-        <div className="flex justify-end mt-2 md:mt-3 gap-2">
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            size="sm"
-            icon={<FiPenTool />}
-          >
-            添削する
+              icon={<FiSave />}
+            >
+              下書き
+            </Button>
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="添削したい投稿内容を入力..."
+            className={`w-full h-32 md:h-48 border ${
+              isEditMode
+                ? "border-blue-500 ring-2 ring-blue-300"
+                : "border-gray-300 dark:border-gray-700"
+            } rounded-md p-2 md:p-3 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-gray-50 dark:bg-gray-700 transition-all duration-300 focus:ring-opacity-50`}
+          />
+          <div className="flex justify-end">
+            <div className="text-sm text-gray-500">
+              <span className={tweetCount.isNearLimit ? (tweetCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold") : ""}>
+                {tweetCount.displayCount}
+              </span>
+              <span> / 280</span>
+            </div>
+          </div>
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              size="sm"
+              icon={<FiPenTool />}
+              disabled={tweetCount.isOverLimit}
+            >
+              添削する
             </Button>
           </div>
         </div>
