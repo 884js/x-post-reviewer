@@ -5,8 +5,8 @@ import { DraftProvider } from '@/contexts/DraftContext';
 export const runtime = "edge";
 
 export const metadata: Metadata = {
-  title: 'AIレビュー投稿アプリ',
-  description: 'AIがあなたの投稿をレビューします',
+  title: 'Xのポスト添削',
+  description: 'AIがあなたの投稿を添削します',
 };
 
 export default function RootLayout({
@@ -27,4 +27,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-} 
+}

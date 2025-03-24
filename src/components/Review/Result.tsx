@@ -1,4 +1,4 @@
-import { POST_NUANCE } from "@/constants/postNuance";
+import { POST_TYPE, POST_RECOMMENDATION } from "@/constants/postNuance";
 import { ReviewResult } from "@/types";
 import { Button } from "../Common/Button";
 import { FiCheck, FiEdit2, FiSend, FiX } from "react-icons/fi";
@@ -11,11 +11,42 @@ type Props = {
   onBack: () => void;
 };
 
-const POST_NUANCE_LABEL = {
-  [POST_NUANCE.TALK_TO_ONESELF]: "独り言",
-  [POST_NUANCE.QUESTION]: "問いかけ",
-  [POST_NUANCE.OPINION]: "意見表明",
-  [POST_NUANCE.INFORMATION]: "情報共有",
+const POST_TYPE_LABEL = {
+  [POST_TYPE.TALK_TO_ONESELF]: "独り言",
+  [POST_TYPE.QUESTION]: "問いかけ",
+  [POST_TYPE.OPINION]: "意見表明",
+  [POST_TYPE.INFORMATION]: "情報共有",
+} as const;
+
+const POST_TYPE_DESCRIPTION = {
+  [POST_TYPE.TALK_TO_ONESELF]: "自分自身に向けた考えや感情の表現",
+  [POST_TYPE.QUESTION]: "読者や他者に質問や意見を求める表現",
+  [POST_TYPE.OPINION]: "自分の考えや立場を表明する表現",
+  [POST_TYPE.INFORMATION]: "客観的な情報やニュースを伝える表現",
+} as const;
+
+const POST_RECOMMENDATION_LABEL = {
+  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "絶対に投稿すべき",
+  [POST_RECOMMENDATION.RECOMMENDED]: "投稿してもよい",
+  [POST_RECOMMENDATION.NEUTRAL]: "どちらとも言えない",
+  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "投稿は控えたほうがよい",
+  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "投稿すべきでない",
+} as const;
+
+const POST_RECOMMENDATION_COLOR = {
+  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "bg-green-500",
+  [POST_RECOMMENDATION.RECOMMENDED]: "bg-green-400",
+  [POST_RECOMMENDATION.NEUTRAL]: "bg-yellow-400",
+  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "bg-orange-400",
+  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "bg-red-500",
+} as const;
+
+const POST_RECOMMENDATION_TEXT_COLOR = {
+  [POST_RECOMMENDATION.HIGHLY_RECOMMENDED]: "text-green-600",
+  [POST_RECOMMENDATION.RECOMMENDED]: "text-green-500",
+  [POST_RECOMMENDATION.NEUTRAL]: "text-yellow-600",
+  [POST_RECOMMENDATION.NOT_RECOMMENDED]: "text-orange-600",
+  [POST_RECOMMENDATION.STRONGLY_DISCOURAGED]: "text-red-600",
 } as const;
 
 const PostButton = ({ text }: { text: string }) => {
@@ -87,7 +118,10 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
 
   return (
     <div className="mb-6 p-4 bg-white rounded-lg border border-[#e1e8ed] shadow-sm">
-      <div className="flex items-center gap-1 mb-4 cursor-pointer" onClick={onBack}>
+      <div
+        className="flex items-center gap-1 mb-4 cursor-pointer"
+        onClick={onBack}
+      >
         <BsChevronLeft className="w-5 h-5" />
         <span>戻る</span>
       </div>
@@ -96,17 +130,17 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
         <div className="flex items-center mb-3">
           <div
             className={`w-4 h-4 rounded-full mr-2 ${
-              reviewResult.should_post ? "bg-green-500" : "bg-red-500"
+              POST_RECOMMENDATION_COLOR[reviewResult.post_recommendation]
             }`}
           />
           <h3 className="font-bold text-[#14171a]">
-            投稿すべきかどうか:
+            投稿の推奨度:
             <span
               className={`ml-2 ${
-                reviewResult.should_post ? "text-green-600" : "text-red-600"
+                POST_RECOMMENDATION_TEXT_COLOR[reviewResult.post_recommendation]
               }`}
             >
-              {reviewResult.should_post ? "はい" : "いいえ"}
+              {POST_RECOMMENDATION_LABEL[reviewResult.post_recommendation]}
             </span>
           </h3>
         </div>
@@ -133,11 +167,18 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
         </div>
 
         <div className="mb-3">
-          <h3 className="font-bold text-[#14171a] mb-1">ニュアンス:</h3>
-          {reviewResult.tweet_nuance && (
-            <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2]">
-              {POST_NUANCE_LABEL[reviewResult.tweet_nuance]}
-            </p>
+          <h3 className="font-bold text-[#14171a] mb-1">投稿タイプ:</h3>
+          {reviewResult.post_type && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-[#1da1f2]">
+                  {POST_TYPE_LABEL[reviewResult.post_type]}
+                </span>
+              </div>
+              <p className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2] text-sm">
+                {POST_TYPE_DESCRIPTION[reviewResult.post_type]}
+              </p>
+            </div>
           )}
         </div>
 

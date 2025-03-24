@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
-import { POST_NUANCE } from '@/constants/postNuance';
+import { POST_TYPE, POST_RECOMMENDATION } from '@/constants/postNuance';
 
 export const runtime = 'edge';
 
@@ -15,8 +15,16 @@ export async function POST(request: Request) {
         original_text: {
           type: SchemaType.STRING,
         },
-        should_post: {
-          type: SchemaType.BOOLEAN,
+        post_recommendation: {
+          type: SchemaType.STRING,
+          format: "enum",
+          enum: [
+            POST_RECOMMENDATION.HIGHLY_RECOMMENDED,
+            POST_RECOMMENDATION.RECOMMENDED,
+            POST_RECOMMENDATION.NEUTRAL,
+            POST_RECOMMENDATION.NOT_RECOMMENDED,
+            POST_RECOMMENDATION.STRONGLY_DISCOURAGED
+          ],
         },
         reason: {
           type: SchemaType.STRING,
@@ -28,13 +36,13 @@ export async function POST(request: Request) {
           type: SchemaType.ARRAY,
           items: { type: SchemaType.STRING },
         },
-        tweet_nuance: {
+        post_type: {
           type: SchemaType.STRING,
           format: "enum",
-          enum: [POST_NUANCE.TALK_TO_ONESELF, POST_NUANCE.QUESTION, POST_NUANCE.OPINION, POST_NUANCE.INFORMATION],
+          enum: [POST_TYPE.TALK_TO_ONESELF, POST_TYPE.QUESTION, POST_TYPE.OPINION, POST_TYPE.INFORMATION],
         }
       },
-      required: ["should_post", "reason", "usefulness_score", "improvement_suggestions", "tweet_nuance"]
+      required: ["post_recommendation", "reason", "usefulness_score", "improvement_suggestions", "post_type"]
     } satisfies Schema
   };
 
@@ -88,22 +96,22 @@ export async function POST(request: Request) {
           text: "8. 「アドバイス」「ヒント」「情報提供」「教える」ような表現を、元の文に無ければ追加してはいけません。"
         },
         {
-          text: "9. 最初に投稿テキストを分析し、ニュアンスを判定してください："
+          text: "9. 最初に投稿テキストを分析し、投稿タイプを判定してください："
         },
         {
-          text: "tweet_nuance: 投稿のニュアンスを次の4種類から判定"
+          text: "post_type: 投稿タイプを次の4種類から判定"
         },
         {
-          text: `${POST_NUANCE.TALK_TO_ONESELF}（個人的につぶやいているニュアンス）`
+          text: `${POST_TYPE.TALK_TO_ONESELF}（独り言：自分自身に向けた考えや感情の表現）`
         },
         {
-          text: `${POST_NUANCE.QUESTION}（読者に質問や意見を求めるニュアンス）`
+          text: `${POST_TYPE.QUESTION}（問いかけ：読者や他者に質問や意見を求める表現）`
         },
         {
-          text: `${POST_NUANCE.OPINION}（個人的な意見や考えを述べているニュアンス）`
+          text: `${POST_TYPE.OPINION}（意見表明：自分の考えや立場を表明する表現）`
         },
         {
-          text: `${POST_NUANCE.INFORMATION}（情報やニュースを伝えるニュアンス）`
+          text: `${POST_TYPE.INFORMATION}（情報共有：客観的な情報やニュースを伝える表現）`
         },
         {
           text: "10. 元のニュアンス（感情表現、複雑な気持ち、迷いや悩みなど）は絶対に崩さず、同じ雰囲気を保ってください。"
@@ -118,9 +126,43 @@ export async function POST(request: Request) {
           text: '次の「評価項目」のみに基づいて評価を行い、JSON形式で回答してください。',
         },
         {
-          text: `"should_post": 投稿すべきかどうかの判断（true or false）
-            - 投稿が読者に明確な価値（学び、発見、有益な情報、ユニークさ、共感性）を与える場合のみtrue
-            - 内容が曖昧、個人的すぎる、意味が薄い、一般的すぎるものはすべてfalse
+          text: `"post_recommendation": 投稿の推奨度を5段階で評価。必ず以下の明確な基準に従って判断してください。
+            - "${POST_RECOMMENDATION.HIGHLY_RECOMMENDED}"（絶対に投稿すべき）
+              • スコア基準: 以下の5点中4点以上を満たす投稿
+              • 新しい視点または独自の洞察を含む（誰でも言えるような内容ではない）
+              • 読者の共感や関心を引き出す明確な要素がある
+              • 簡潔かつ明確に主旨が伝わる（140文字を効果的に使用）
+              • 他の類似投稿と明確に差別化できる独自性がある
+              • 時宜を得ている、または永続的な価値がある情報を含む
+            
+            - "${POST_RECOMMENDATION.RECOMMENDED}"（投稿してもよい）
+              • スコア基準: 上記の5点中3点を満たす投稿
+              • ある程度の価値はあるが、突出したオリジナリティはない
+              • 一部の読者には共感される可能性があるが、広範な関心を集めるほどではない
+              • 文章は理解可能だが、より明確にできる余地がある
+              • 内容に改善点はあるが、全体として投稿に値する
+            
+            - "${POST_RECOMMENDATION.NEUTRAL}"（どちらとも言えない）
+              • スコア基準: 上記の5点中2点のみ満たす投稿
+              • 価値ある要素と改善が必要な要素が均衡している
+              • 内容は間違っていないが、表現方法に大きな改善の余地がある
+              • トピック自体は興味深いが、アプローチが一般的すぎる
+              • 現状では投稿価値が平均的で、際立った特徴がない
+            
+            - "${POST_RECOMMENDATION.NOT_RECOMMENDED}"（投稿は控えたほうがよい）
+              • スコア基準: 上記の5点中1点のみ満たす投稿
+              • 内容の価値が限定的で、読者にとっての有用性が低い
+              • 表現が曖昧または冗長で、文章構成に問題がある
+              • よくある意見や情報の繰り返しに過ぎない
+              • 改善しなければ否定的な反応を受ける可能性がある
+            
+            - "${POST_RECOMMENDATION.STRONGLY_DISCOURAGED}"（投稿すべきでない）
+              • スコア基準: 上記の5点をまったく満たさない投稿
+              • 内容に価値がほとんど見出せない
+              • 極めて個人的過ぎて一般の関心を引かない
+              • 表現が非常に不明瞭で理解が困難
+              • 明らかな誤情報や不適切な内容を含んでいる
+              • 否定的な反応や誤解を引き起こす可能性が高い
           `,
         },
         {
@@ -136,11 +178,11 @@ export async function POST(request: Request) {
           text: '"improvement_suggestions": 元の文章のテイストを維持し、140文字以内の改善案を5つ提案',
         },
         {
-          text: `"tweet_nuance": 投稿のニュアンスを次の4種類から判定
-            - ${POST_NUANCE.TALK_TO_ONESELF}（個人的につぶやいているニュアンス）
-            - ${POST_NUANCE.QUESTION}（読者に質問や意見を求めるニュアンス）
-            - ${POST_NUANCE.OPINION}（個人的な意見や考えを述べているニュアンス）
-            - ${POST_NUANCE.INFORMATION}（情報やニュースを伝えるニュアンス）
+          text: `"tweet_type": 投稿タイプを次の4種類から判定
+            - ${POST_TYPE.TALK_TO_ONESELF}（独り言：自分自身に向けた考えや感情の表現）
+            - ${POST_TYPE.QUESTION}（問いかけ：読者や他者に質問や意見を求める表現）
+            - ${POST_TYPE.OPINION}（意見表明：自分の考えや立場を表明する表現）
+            - ${POST_TYPE.INFORMATION}（情報共有：客観的な情報やニュースを伝える表現）
           `,
         }
       ],
