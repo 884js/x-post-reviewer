@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
 import { DraftProvider } from '@/contexts/DraftContext';
+import { PostHistoryProvider } from '@/contexts/PostHistoryContext';
 
 export const runtime = "edge";
 
@@ -18,11 +19,13 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <DraftProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="max-w-[600px] mx-auto p-4 md:p-6">
-              {children}
+          <PostHistoryProvider>
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+              <div className="max-w-[600px] mx-auto p-4 md:p-6">
+                {children}
+              </div>
             </div>
-          </div>
+          </PostHistoryProvider>
         </DraftProvider>
       </body>
     </html>

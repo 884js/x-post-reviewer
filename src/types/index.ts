@@ -6,6 +6,12 @@ export interface Draft {
   createdAt: string;
 }
 
+export interface PostHistory {
+  id: string;
+  content: string;
+  postedAt: string;
+}
+
 export interface ImprovementSuggestion {
   text: string;
   improvements: string;

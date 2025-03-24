@@ -4,6 +4,7 @@ import { FiCheck, FiEdit2, FiSend, FiX } from "react-icons/fi";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BsChevronLeft } from "react-icons/bs";
 import { formatTweetCount } from "@/utils/tweetCounter";
+import { usePostHistory } from "@/contexts/PostHistoryContext";
 
 type Props = {
   reviewResult: ReviewResult | null;
