@@ -10,6 +10,7 @@ type Props = {
   reviewResult: ReviewResult | null;
   onUpdateReviewResult: (reviewResult: ReviewResult) => void;
   onBack: () => void;
+  originalContent: string;
 };
 
 const POST_TYPE_LABEL: Record<string, string> = {
@@ -64,14 +65,14 @@ const PostButton = ({ text }: { text: string }) => {
   );
 };
 
-export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) => {
+export const Result = ({ reviewResult, onUpdateReviewResult, onBack, originalContent }: Props) => {
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
   const [editingSuggestionIndex, setEditingSuggestionIndex] = useState<
     number | null
     >(null);
 
   // Twitter文字数カウント
-  const originalTextCount = reviewResult ? formatTweetCount(reviewResult.original_text) : { displayCount: 0, isNearLimit: false, isOverLimit: false };
+  const originalTextCount = formatTweetCount(originalContent);
 
   const startEditingOriginal = () => {
     if (reviewResult) {
@@ -84,7 +85,6 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
       if (reviewResult) {
         onUpdateReviewResult({
           ...reviewResult,
-          original_text: text,
         });
 
         setIsEditingOriginal(false);
@@ -98,12 +98,12 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
   };
 
   const saveSuggestionEdit = useCallback(
-    (text: string) => {
+    (text: string, improvements: string) => {
       if (reviewResult && editingSuggestionIndex !== null) {
         const updatedSuggestions = [...reviewResult.improvement_suggestions];
         updatedSuggestions[editingSuggestionIndex] = {
           text,
-          improvements: updatedSuggestions[editingSuggestionIndex].improvements
+          improvements
         };
         onUpdateReviewResult({
           ...reviewResult,
@@ -119,7 +119,7 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
   if (!reviewResult) return null;
 
   return (
-    <div className="mb-6 p-4 bg-white rounded-lg border border-[#e1e8ed] shadow-sm">
+    <div className="mb-6 p-4 bg-white rounded-lg border border-[#e1e8ed] shadow-sm" data-testid="review-result">
       <div
         className="flex items-center gap-1 mb-4 cursor-pointer"
         onClick={onBack}
@@ -136,7 +136,7 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
             }`}
           />
           <h3 className="font-bold text-[#14171a]">
-            投稿の推奨度:
+            投稿の推奨度
             <span
               className={`ml-2 ${
                 POST_RECOMMENDATION_TEXT_COLOR[reviewResult.post_recommendation]
@@ -148,7 +148,7 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
         </div>
 
         <div className="mb-3">
-          <h3 className="font-bold text-[#14171a] mb-1">投稿価値:</h3>
+          <h3 className="font-bold text-[#14171a] mb-1">投稿価値</h3>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
               <span
@@ -169,7 +169,7 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
         </div>
 
         <div className="mb-3">
-          <h3 className="font-bold text-[#14171a] mb-1">投稿タイプ:</h3>
+          <h3 className="font-bold text-[#14171a] mb-1">投稿タイプ</h3>
           {reviewResult.post_type && (
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -197,8 +197,8 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
           <h3 className="font-bold text-[#14171a] mb-1">元の文章:</h3>
           {isEditingOriginal ? (
             <InlineEditor
-              initialText={reviewResult.original_text}
-              onSave={(text) => saveOriginalEdit(text)}
+              initialText={originalContent}
+              onSave={(text, _) => saveOriginalEdit(text)}
               onCancel={() => setIsEditingOriginal(false)}
               maxLength={280}
             />
@@ -208,14 +208,16 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
                 className="text-[#657786] bg-[#f5f8fa] p-3 rounded-lg border-l-4 border-[#1da1f2] break-keep"
                 style={{ overflowWrap: "anywhere" }}
               >
-                {reviewResult.original_text}
+                {originalContent}
               </p>
               <div className="flex justify-end mt-2">
                 <div className="text-sm text-gray-500">
                   <span
                     className={
                       originalTextCount.isNearLimit
-                        ? (originalTextCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold")
+                        ? originalTextCount.isOverLimit
+                          ? "text-red-500 font-bold"
+                          : "text-orange-500 font-bold"
                         : ""
                     }
                   >
@@ -233,54 +235,72 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
                 >
                   編集
                 </Button>
-                <PostButton text={reviewResult.original_text} />
+                <PostButton text={originalContent} />
               </div>
             </>
           )}
         </div>
 
         <div>
-          <h3 className="font-bold text-[#14171a]">改善案:</h3>
+          <h3 className="font-bold text-[#14171a] mb-1">改善案</h3>
           <ul className="space-y-2 flex flex-col gap-2">
             {reviewResult.improvement_suggestions.map((suggestion, index) => {
               // 各改善案の文字数をカウント
               const suggestionCount = formatTweetCount(suggestion.text);
-              
+
               return (
                 <div key={index}>
-                  <li className="bg-[#e0f7fa] p-3 rounded-lg flex flex-col">
-                    <div className="flex items-start">
-                      <span className="text-[#1da1f2] font-bold mr-2">
-                        {index + 1}.
-                      </span>
-                      {editingSuggestionIndex === index ? (
-                        <InlineEditor
-                          initialText={suggestion.text}
-                          onSave={saveSuggestionEdit}
-                          onCancel={() => setEditingSuggestionIndex(null)}
-                          maxLength={280}
-                        />
-                      ) : (
-                        <span style={{ overflowWrap: "anywhere" }} className="break-keep">
-                          {suggestion.text}
-                        </span>
-                      )}
-                    </div>
-                    {suggestion.improvements && (
-                      <div className="mt-2 ml-6 text-sm text-gray-600 italic">
-                        <span className="font-medium">改善点: </span>
-                        {suggestion.improvements}
+                  {editingSuggestionIndex === index ? (
+                    <InlineEditor
+                      initialText={suggestion.text}
+                      initialImprovements={suggestion.improvements}
+                      onSave={(text, improvements) =>
+                        saveSuggestionEdit(text, improvements || "")
+                      }
+                      onCancel={() => setEditingSuggestionIndex(null)}
+                      maxLength={280}
+                    />
+                  ) : (
+                    <div className="bg-[#f5f8fa] p-4 rounded-lg border-l-4 border-[#6ddb90]">
+                      <div className="flex items-start justify-between">
+                        <div
+                          className="mb-3 font-medium text-gray-800 break-keep"
+                          style={{ overflowWrap: "anywhere" }}
+                        >
+                          改善案 {index + 1}
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              startEditingSuggestion(suggestion, index)
+                            }
+                            className="text-[#1da1f2] hover:text-[#1a91da]"
+                          >
+                            <FiEdit2 size={16} />
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </li>
-                  {editingSuggestionIndex !== index && (
-                    <>
-                      <div className="flex justify-end mt-2">
-                        <div className="text-sm text-gray-500">
+                      <p
+                        className="text-[#14171a] break-keep"
+                        style={{ overflowWrap: "anywhere" }}
+                      >
+                        {suggestion.text}
+                      </p>
+
+                      {suggestion.improvements && (
+                        <div className="mt-2 text-sm text-[#657786] bg-[#f0f3f5] p-2 rounded">
+                          {suggestion.improvements}
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="text-xs text-gray-500">
                           <span
                             className={
                               suggestionCount.isNearLimit
-                                ? (suggestionCount.isOverLimit ? "text-red-500 font-bold" : "text-orange-500 font-bold")
+                                ? suggestionCount.isOverLimit
+                                  ? "text-red-500 font-bold"
+                                  : "text-orange-500 font-bold"
                                 : ""
                             }
                           >
@@ -288,22 +308,9 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
                           </span>
                           <span> / 280</span>
                         </div>
-                      </div>
-                      <div className="flex justify-end mt-2 gap-2">
-                        <Button
-                          variant="secondary"
-                          className="w-auto"
-                          onClick={() =>
-                            startEditingSuggestion(suggestion, index)
-                          }
-                          size="xs"
-                          icon={<FiEdit2 />}
-                        >
-                          編集
-                        </Button>
                         <PostButton text={suggestion.text} />
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               );
@@ -317,16 +324,19 @@ export const Result = ({ reviewResult, onUpdateReviewResult, onBack }: Props) =>
 
 function InlineEditor({
   initialText,
+  initialImprovements = '',
   onSave,
   onCancel,
   maxLength,
 }: {
   initialText: string;
-  onSave: (text: string) => void;
+  initialImprovements?: string;
+  onSave: (text: string, improvements: string) => void;
   onCancel: () => void;
   maxLength: number;
 }) {
   const [text, setText] = useState(initialText);
+  const [improvements, setImprovements] = useState(initialImprovements);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Twitter文字数カウント
@@ -366,7 +376,7 @@ function InlineEditor({
         </Button>
         <Button
           variant="primary"
-          onClick={() => onSave(text)}
+          onClick={() => onSave(text, improvements)}
           size="xs"
           icon={<FiCheck />}
           disabled={tweetCount.isOverLimit}

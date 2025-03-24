@@ -1,11 +1,23 @@
 @import "tailwindcss";
 
+:root {
+  --line-height-normal: 1.6;
+  --line-height-tight: 1.4;
+  --letter-spacing-normal: 0.015em;
+  --letter-spacing-tight: -0.01em;
+  --letter-spacing-wide: 0.03em;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-family: var(--font-noto-sans-jp), -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 
+    'Noto Sans JP', Meiryo, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
 }
 
 a {
@@ -15,4 +27,38 @@ a {
 
 * {
   box-sizing: border-box;
+}
+
+/* 見出し用のスタイル */
+h1, h2, h3, h4, h5 {
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
+  font-feature-settings: "palt";
+}
+
+/* 本文用のスタイル */
+p, textarea, input {
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
+  font-feature-settings: "palt";
+}
+
+/* 小さいテキスト用 */
+.text-xs, .text-sm {
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: 1.5;
+}
+
+/* フォント機能設定のユーティリティクラス */
+.font-feature-settings-palt {
+  font-feature-settings: "palt";
+}
+
+.font-feature-settings-pkna {
+  font-feature-settings: "pkna";
+}
+
+/* 数字用 */
+.font-feature-settings-pnum {
+  font-feature-settings: "pnum";
 } 

@@ -3,10 +3,23 @@ module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx}",
     "./src/components/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // ... 他の拡張設定
+      // フォント設定
+      fontFamily: {
+        sans: ['var(--font-noto-sans-jp)', 'sans-serif'],
+      },
+      lineHeight: {
+        'relaxed': 'var(--line-height-normal)',
+        'tight': 'var(--line-height-tight)',
+      },
+      letterSpacing: {
+        'normal': 'var(--letter-spacing-normal)',
+        'tight': 'var(--letter-spacing-tight)',
+        'wide': 'var(--letter-spacing-wide)',
+      },
       animation: {
         "spin-slow": "spin 3s linear infinite",
       },
@@ -23,5 +36,6 @@ module.exports = {
       },
     },
   },
+  darkMode: 'class',
   plugins: [],
 }; 

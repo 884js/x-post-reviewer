@@ -6,6 +6,7 @@ import { PostHistory } from '@/types';
 interface PostHistoryContextType {
   history: PostHistory[];
   addToHistory: (content: string) => void;
+  deleteFromHistory: (id: string) => void;
   clearHistory: () => void;
 }
 
@@ -41,12 +42,16 @@ export function PostHistoryProvider({ children }: { children: ReactNode }) {
     setHistory(prev => [newHistoryItem, ...prev.slice(0, 9)]); // 最大10件保存
   };
 
+  const deleteFromHistory = (id: string) => {
+    setHistory(prev => prev.filter(item => item.id !== id));
+  };
+
   const clearHistory = () => {
     setHistory([]);
   };
 
   return (
-    <PostHistoryContext.Provider value={{ history, addToHistory, clearHistory }}>
+    <PostHistoryContext.Provider value={{ history, addToHistory, deleteFromHistory, clearHistory }}>
       {children}
     </PostHistoryContext.Provider>
   );

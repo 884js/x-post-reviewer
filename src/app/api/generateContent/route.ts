@@ -12,9 +12,6 @@ export async function POST(request: Request) {
     responseSchema: {
       type: SchemaType.OBJECT,
       properties: {
-        original_text: {
-          type: SchemaType.STRING,
-        },
         post_recommendation: {
           type: SchemaType.STRING,
           format: "enum",
@@ -174,9 +171,6 @@ export async function POST(request: Request) {
               • 明らかな誤情報や不適切な内容を含んでいる
               • 否定的な反応や誤解を引き起こす可能性が高い
           `,
-        },
-        {
-          text: '"original_text": 元の投稿テキスト',
         },
         {
           text: '"reason": 判断の理由を簡潔に日本語で説明（〜100文字）。評価基準のどの点を満たしているか、または満たしていないかを具体的に説明すること。日本語以外の言語は使用しないでください。',

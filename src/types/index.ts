@@ -18,7 +18,6 @@ export interface ImprovementSuggestion {
 }
 
 export interface ReviewResult {
-  original_text: string;
   post_recommendation: keyof typeof POST_RECOMMENDATION;
   reason: string;
   usefulness_score: number;
