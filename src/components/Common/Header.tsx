@@ -6,7 +6,7 @@ export function Header() {
       <div className="w-full max-w-[600px] mx-auto px-3 md:px-6">
         <div className="flex items-center justify-center">
           <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 tracking-wide letter-spacing-wide leading-tight">
-            <span className="text-[#1da1f2]">X</span>Calibur
+            Post Polish
           </h1>
         </div>
       </div>
