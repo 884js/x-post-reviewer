@@ -11,6 +11,7 @@ import { formatTweetCount } from '@/utils/tweetCounter';
 import { PostHistoryList } from '../PostHistory/PostHistoryList';
 import { DraftsList } from '../Drafts/DraftsList';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { $path } from 'next-typesafe-path';
 
 export function ReviewForm() {
   const router = useRouter();
@@ -36,9 +37,9 @@ export function ReviewForm() {
   // モードが変わったときにURLを更新
   useEffect(() => {
     if (mode === 'review') {
-      router.push('?result=true');
+      router.push($path('/', { result: 'true' }));
     } else {
-      router.push('/');
+      router.push($path('/'));
     }
   }, [mode, router]);
 

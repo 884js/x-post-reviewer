@@ -15,7 +15,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: 'XCalibur - AIによる投稿添削',
+  title: 'Post Polish - AIによる投稿添削',
   description: 'AIがあなたのX（旧Twitter）投稿を分析して改善・添削します',
   icons: {
     icon: '/favicon.svg',
