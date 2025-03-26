@@ -1,4 +1,5 @@
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
+import withPWA from 'next-pwa';
 
 const nextConfig = {
   output: 'standalone',
@@ -13,7 +14,14 @@ const nextConfig = {
   },
 }
 
-export default nextConfig;
+const config = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development'
+})(nextConfig);
+
+export default config;
 
 if (process.env.NODE_ENV === 'development') {
 	await setupDevPlatform();

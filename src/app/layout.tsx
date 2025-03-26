@@ -17,8 +17,21 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: 'Post Polish - AIによる投稿添削',
   description: 'AIがあなたのX（旧Twitter）投稿を分析して改善・添削します',
+  manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
+    apple: '/icons/icon-192x192.png',
+  },
+  themeColor: '#1d4ed8',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Post Polish',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
   },
 };
 
