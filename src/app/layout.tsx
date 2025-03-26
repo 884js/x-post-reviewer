@@ -3,6 +3,8 @@ import '@/styles/globals.css';
 import { DraftProvider } from '@/contexts/DraftContext';
 import { PostHistoryProvider } from '@/contexts/PostHistoryContext';
 import { Noto_Sans_JP } from 'next/font/google';
+import { Inter } from 'next/font/google';
+import PWAInstallPrompt from '@/components/Common/PWAInstallPrompt';
 
 export const runtime = "edge";
 
@@ -13,6 +15,8 @@ const notoSansJP = Noto_Sans_JP({
   display: 'swap',
   variable: '--font-noto-sans-jp',
 });
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Post Polish - AIによる投稿添削',
@@ -54,6 +58,7 @@ export default function RootLayout({
             </div>
           </PostHistoryProvider>
         </DraftProvider>
+        <PWAInstallPrompt />
       </body>
     </html>
   );
