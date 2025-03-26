@@ -72,8 +72,8 @@ export function ReviewForm() {
 
       const result = await res.json();
       
-      // 添削した内容を履歴に追加
-      addToHistory(content);
+      // 添削した内容を履歴に追加（添削結果も含める）
+      addToHistory(content, result);
       
       // 編集中の下書きがある場合は削除
       if (currentEditingDraftId) {

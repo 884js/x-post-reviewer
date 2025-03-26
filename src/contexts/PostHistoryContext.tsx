@@ -1,11 +1,11 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { PostHistory } from '@/types';
+import { PostHistory, ReviewResult } from '@/types';
 
 interface PostHistoryContextType {
   history: PostHistory[];
-  addToHistory: (content: string) => void;
+  addToHistory: (content: string, reviewResult: ReviewResult) => void;
   deleteFromHistory: (id: string) => void;
   clearHistory: () => void;
 }
@@ -26,7 +26,7 @@ export function PostHistoryProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('postHistory', JSON.stringify(history));
   }, [history]);
 
-  const addToHistory = (content: string) => {
+  const addToHistory = (content: string, reviewResult: ReviewResult) => {
     // 同じ内容の投稿が既に履歴にある場合は追加しない
     if (history.some(item => item.content === content)) {
       return;
@@ -36,10 +36,11 @@ export function PostHistoryProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
       content,
       postedAt: new Date().toISOString(),
+      reviewResult,
     };
     
     // 最新の投稿を上に表示する（先頭に追加）
-    setHistory(prev => [newHistoryItem, ...prev.slice(0, 9)]); // 最大10件保存
+    setHistory(prev => [newHistoryItem, ...prev.slice(0, 19)]); // 最大20件保存に変更
   };
 
   const deleteFromHistory = (id: string) => {

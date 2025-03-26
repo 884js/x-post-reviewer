@@ -10,6 +10,7 @@ export interface PostHistory {
   id: string;
   content: string;
   postedAt: string;
+  reviewResult: ReviewResult;
 }
 
 export interface ImprovementSuggestion {
