@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
 import { DraftProvider } from '@/contexts/DraftContext';
 import { PostHistoryProvider } from '@/contexts/PostHistoryContext';
@@ -18,6 +18,12 @@ const notoSansJP = Noto_Sans_JP({
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: 'Post Polish - AIによる投稿添削',
   description: 'AIがあなたのX（旧Twitter）投稿を分析して改善・添削します',
@@ -31,11 +37,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Post Polish',
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
   },
 };
 
