@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { GenerationConfig, GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { POST_TYPE, POST_RECOMMENDATION } from '@/constants/postNuance';
 
 export const runtime = 'edge';
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       },
       required: ["post_recommendation", "reason", "usefulness_score", "improvement_suggestions", "post_type"]
     } satisfies Schema
-  };
+  } satisfies GenerationConfig;
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash', generationConfig })
 
