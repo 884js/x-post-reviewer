@@ -50,6 +50,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "f986c94b0cab4f97a3384768501eb089"}'></script>
       </head>
       <body className="font-sans">
         <DraftProvider>
